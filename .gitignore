@@ -1,0 +1,9 @@
+.cpcache
+.DS_Store
+nohup.out
+config.edn
+logs
+resources/public/data/events/*
+resources/public/data/github/*
+resources/public/data/gps/*
+resources/public/data/steps/*
