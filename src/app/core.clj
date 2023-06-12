@@ -12,6 +12,7 @@
             [org.httpkit.client :refer [post]]
             [org.httpkit.sni-client :as sni-client]
             [hiccup.page :refer [html5]]
+            [alandipert.enduro :as e]
             [java-time.api :refer [as duration format instant local-date]])
   (:import (java.io File)
            (java.util UUID)))
@@ -19,6 +20,7 @@
 (alter-var-root #'org.httpkit.client/*default-client* (fn [_] sni-client/default-client))
 (def cfg (read-config "config.edn" {}))
 (def data-path "resources/public/data")
+(def state (e/file-atom {:events-count 0} "omnom-state.clj"))
 (def start-inst (instant))
 (def htm-tors [(body-params) http/html-body])
 
@@ -58,6 +60,7 @@
         {:id uid :payload {:action action :org org :repo repo :provider provider :git-evt git-evt}})
     (pretty-spit (str data-path "/events/" date-pathfrag "-" e-frag ".edn")
         {:published (str inst) :eventId e-id :providerId {:id uid} :object (str org "/" repo) :predicate "transmits repository event data via webhook" :category "github"})
+    (e/swap! state update :events-count inc)
     {:status 200 :body "ok"}))
 
 (defn- gps [req]
@@ -70,6 +73,7 @@
       (pretty-spit (str data-path "/gps/" date-pathfrag "-" u-frag ".edn") {:id uid :payload locations})
       (pretty-spit (str data-path "/events/" date-pathfrag "-" e-frag ".edn")
         {:published (str inst) :eventId e-id :providerId {:id uid} :object (:gps-device-id cfg) :predicate "transmits GPS data" :category "gps"})
+      (e/swap! state update :events-count inc)
       {:status 200 :body (write-str {:result "ok"}) :headers {"Content-Type" "application/json"}})))
 
 (defn- steps [req]
@@ -81,6 +85,7 @@
       (pretty-spit (str data-path "/steps/" date-pathfrag "-" u-frag ".edn") {:id uid :payload steps})
       (pretty-spit (str data-path "/events/" date-pathfrag "-" e-frag ".edn")
         {:published (str inst) :eventId e-id :providerId {:id uid} :object (:steps-device-id cfg) :predicate "transmits steps data" :category "steps"})
+      (e/swap! state update :events-count inc)
       (let [uri "https://alerty.dev/api/notify"
             options {:headers {"Authorization" (str "Bearer " (:alerty-api-key cfg))}
                      :body (write-str {:title "Riker Daily Summary" :message (str "See summary at " (:site-root cfg) "daily-summaries/" date-pathfrag "-" e-frag)})}]
@@ -115,7 +120,7 @@
     [:div {:class "container-fluid"}
     [:footer
       [:p
-      [:small "Omnom v" (get-in cfg [:version :omnom]) ", uptime " (uptime-by-unit :days) " days"]]]]
+      [:small "Omnom v" (get-in cfg [:version :omnom]) ", uptime " (uptime-by-unit :days) " days, content events handled " (:events-count @state)]]]]
     [:script {:src "//code.jquery.com/jquery.js"}]
     [:script {:src "/js/bootstrap.min.js"}]])
 
