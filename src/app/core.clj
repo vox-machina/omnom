@@ -1,7 +1,8 @@
 (ns app.core
-  (:require [clojure.data.json :refer [write-str]]
+  (:require [clojure.data.json :refer [read-str write-str]]
             [clojure.pprint :refer [code-dispatch write]]
             [clojure.string :refer [replace split]]
+            [clojure.walk :refer [keywordize-keys]]
             [clojure.zip :refer [end? next node zipper]]
             [aero.core :refer (read-config)]
             [io.pedestal.http :as http]
@@ -37,12 +38,14 @@
   (let [now (local-date)
         published (format "yyyy-MM-dd" now)
         date-pathfrag (replace published "-" "")
+        uid (str (UUID/randomUUID))
         e-id (str (UUID/randomUUID))]
-    {:inst (instant) :published published :e-id e-id :e-frag (first (split e-id #"-")) :date-pathfrag date-pathfrag}))
+    {:inst (instant) :published published :uid uid :u-frag (first (split uid #"-")) :e-id e-id :e-frag (first (split e-id #"-")) :date-pathfrag date-pathfrag}))
 
 (defn- github [req]
-  (let [{:keys [inst published date-pathfrag e-id e-frag]} (ep-scaffolding)
-        payload (get-in req [:json-params :payload])
+  (let [{:keys [inst published date-pathfrag uid u-frag e-id e-frag]} (ep-scaffolding)
+        params (-> (:params req) keywordize-keys)
+        payload (-> (:payload params) read-str keywordize-keys)
         repo (get-in payload [:repository :name])
         org (or (get-in payload [:organization :login]) "N/A")
         git-evt (cond
@@ -51,8 +54,10 @@
           :else "unknown event")
         action (or (get-in payload [:action]) "unknown action")
         provider (or (get-in payload [:sender :html_url]) "unknown provider")]
+    (pretty-spit (str data-path "/github/" date-pathfrag "-" u-frag ".edn")
+        {:id uid :payload {:action action :org org :repo repo :provider provider :git-evt git-evt}})
     (pretty-spit (str data-path "/events/" date-pathfrag "-" e-frag ".edn")
-        {:published (str inst) :eventId e-id :providerId {:source provider} :object (str org "/" repo) :predicate (str action " " git-evt) :category "github"})
+        {:published (str inst) :eventId e-id :providerId {:id uid} :object (str org "/" repo) :predicate "transmits repository event data via webhook" :category "github"})
     {:status 200 :body "ok"}))
 
 (defn- gps [req]
