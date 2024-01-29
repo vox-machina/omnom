@@ -1,4 +1,4 @@
-(ns app.core
+(ns omnom.app.core
   (:require [clojure.data.json :refer [read-str write-str]]
             [clojure.pprint :refer [code-dispatch write]]
             [clojure.string :refer [replace split]]

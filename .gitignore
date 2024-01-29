@@ -2,6 +2,8 @@
 .DS_Store
 nohup.out
 config.edn
+version.edn
+omnom-state.clj
 logs
 resources/public/data/events/*
 resources/public/data/github/*
