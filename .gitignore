@@ -4,6 +4,7 @@ nohup.out
 config.edn
 version.edn
 omnom-state.clj
+target
 logs
 resources/public/data/events/*
 resources/public/data/github/*

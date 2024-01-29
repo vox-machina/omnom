@@ -20,10 +20,24 @@ And offers the following functionality additionally:
 
 Copy config.template.edn to config.edn and set the variables to your needs.
 
-then run
+### Run
 
 ```bash
- clj -X app.core/-main
+ clj -X omnom.app.core/-main
+```
+
+### Run continuous integration and create jar
+
+```bash
+$ clj -T:build ci
+```
+
+### Install jar file locally (mvn)
+
+In order to use the this library as a dependency in your project you can clone locally and intall into mvn as a local jar.
+
+```bash
+$ clj -T:build install
 ```
 
 ## Roadmap
