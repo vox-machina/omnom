@@ -155,11 +155,8 @@
     ::http/port              (Integer. (or (:port cfg) 5001))
     ::http/container-options {:h2c? true :h2?  false :ssl? false}})
 
-(defn create-server []
-  (-> service-map
-      (http/default-interceptors)
-      http/create-server))
+(defn create-server [] (-> service-map (http/default-interceptors) http/create-server))
 
 (defn -main [_]
-  (info :omnom/main (str "starting omnom v" (get-in cfg [:version :omnom])))
+  (info :server/start (str "starting omnom v" (get-in cfg [:version :omnom])))
   (http/start (create-server)))
