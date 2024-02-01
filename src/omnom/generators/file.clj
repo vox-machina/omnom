@@ -12,4 +12,4 @@
   (->> (line-seq (reader (file path)))
        (filter #(includes? % ns-filter))
        (map #(.split % token))
-       (map #(hash-map :ns ns-filter :instant (first %) :log (read-string (second %))))))
+       (map #(hash-map :ns ns-filter :instant (first (.split (first %) " ")) :log (read-string (second %))))))
