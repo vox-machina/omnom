@@ -9,7 +9,8 @@
    Filter using ns-filter e.g. to include onlines that relate to a namespace.
    Split on a given token to create events out of log lines."
   [path ns-filter token]
-  (->> (line-seq (reader (file path)))
+  (try (->> (line-seq (reader (file path)))
        (filter #(includes? % ns-filter))
        (map #(.split % token))
-       (map #(hash-map :ns ns-filter :instant (first (.split (first %) " ")) :log (read-string (second %))))))
+       (map #(hash-map :ns ns-filter :instant (first (.split (first %) " ")) :log (read-string (second %)))))
+       (catch Exception e [])))
