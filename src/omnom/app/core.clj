@@ -44,6 +44,10 @@
         e-id (str (UUID/randomUUID))]
     {:inst (instant) :published published :uid uid :u-frag (first (split uid #"-")) :e-id e-id :e-frag (first (split e-id #"-")) :date-pathfrag date-pathfrag}))
 
+(defn habitat [req]
+  (println "req : " req)
+  {:status 200 :body "ok"})
+
 (defn- github [req]
   (let [{:keys [inst published date-pathfrag uid u-frag e-id e-frag]} (ep-scaffolding)
         params (-> (:params req) keywordize-keys)
@@ -51,15 +55,15 @@
         repo (get-in payload [:repository :name])
         org (or (get-in payload [:organization :login]) "N/A")
         git-evt (cond
-          (:issue payload) "issue"
-          (:hook payload) "webhook"
-          :else "unknown event")
+                  (:issue payload) "issue"
+                  (:hook payload) "webhook"
+                  :else "unknown event")
         action (or (get-in payload [:action]) "unknown action")
         provider (or (get-in payload [:sender :html_url]) "unknown provider")]
     (pretty-spit (str data-path "/github/" date-pathfrag "-" u-frag ".edn")
-        {:id uid :payload {:action action :org org :repo repo :provider provider :git-evt git-evt}})
+                 {:id uid :payload {:action action :org org :repo repo :provider provider :git-evt git-evt}})
     (pretty-spit (str data-path "/events/" date-pathfrag "-" e-frag ".edn")
-        {:published (str inst) :eventId e-id :providerId {:id uid} :object (str org "/" repo) :predicate "transmits repository event data via webhook" :category "github"})
+                 {:published (str inst) :eventId e-id :providerId {:id uid} :object (str org "/" repo) :predicate "transmits repository event data via webhook" :category "github"})
     (e/swap! state update :events-count inc)
     {:status 200 :body "ok"}))
 
@@ -137,11 +141,13 @@
       [:h5 {:class "card-title"} "About Omnom"]
       [:p "Omnom collects content for you - any content you like. E.G:"]
       [:ul
+       [:li "Filesystem events from your machines"]
        [:li "GPS data from Apps"]
        [:li "Biometrics data from devices"]]]]]))))
 
 (def routes
   #{["/"       :get  (conj htm-tors `home)]
+    ["/habitat" :post [(body-params) `habitat]]
     ["/github" :post [(body-params) `github]]
     ["/gps"    :post [(body-params) `gps]]
     ["/steps"  :get  [(body-params) `steps]]})
